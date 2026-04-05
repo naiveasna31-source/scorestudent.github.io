@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>All In One System</title>
+
+<style>
+body {
+    font-family: Khmer OS Battambang;
+}
+
+/* LOGIN */
+#loginPage {
+    width: 300px;
+    margin: 100px auto;
+    border: 1px solid #ccc;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+#loginPage input {
+    width: 100%;
+    height: 30px;
+    margin: 10px 0;
+    padding-left: 10px;
+}
+
+#loginPage button {
+    width: 100%;
+    height: 35px;
+    background: blue;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+/* SYSTEM */
+#systemPage {
+    display: none;
+}
+
+.header {
+    background: rgb(41, 101, 230);
+    color: white;
+    padding: 10px;
+    width: 85%;
+    margin: 20px auto;
+}
+
+.container {
+    width: 85%;
+    margin: auto;
+}
+
+input {
+    height: 30px;
+    margin: 5px;
+    padding-left: 10px;
+}
+
+button {
+    height: 30px;
+    cursor: pointer;
+}
+
+.table-box {
+    border: 1px solid #ccc;
+    margin-top: 20px;
+    padding: 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+td, th {
+    border-bottom: 1px solid #ccc;
+    padding: 10px;
+}
+
+thead {
+    background: #eee;
+}
+
+.logout {
+    float: right;
+    background: red;
+    color: white;
+    border: none;
+}
+
+/* PRINT */
+@media print {
+    #loginPage, .controls, .header button {
+        display: none;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="loginPage">
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <p>admin / 123</p>
+</div>
+
+<!-- SYSTEM PAGE -->
+<div id="systemPage">
+
+    <div class="header">
+        📘 Student System
+        <button class="logout" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="container controls">
+        <input type="text" id="nm" placeholder="ឈ្មោះនិស្សិត">
+        <input type="text" id="sc" placeholder="ពិន្ទុ (0-100)">
+
+        <br>
+        <button onclick="addStudent()">រក្សាទុក</button>
+        <button onclick="deleteAll()">Delete All</button>
+        <button onclick="printPage()">Print</button>
+    </div>
+
+    <div class="container table-box">
+        <table>
+            <thead>
+                <tr>
+                    <th>ល.រ</th>
+                    <th>ឈ្មោះ</th>
+                    <th>ពិន្ទុ</th>
+                    <th>និទ្ទេស</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+// LOGIN
+function login(){
+    let u = document.getElementById("username").value.trim();
+    let p = document.getElementById("password").value.trim();
+
+    if(u === "" || p === ""){
+        alert("Please fill all fields!");
+        return;
+    }
+
+    if(u === "admin" && p === "123"){
+        localStorage.setItem("login", "true");
+        showSystem();
+    }else{
+        alert("Wrong username!");
+    }
+}
+
+function logout(){
+    localStorage.removeItem("login");
+    document.getElementById("systemPage").style.display = "none";
+    document.getElementById("loginPage").style.display = "block";
+}
+
+// SHOW SYSTEM
+function showSystem(){
+    document.getElementById("loginPage").style.display = "none";
+    document.getElementById("systemPage").style.display = "block";
+}
+
+// STUDENT DATA
+let students = JSON.parse(localStorage.getItem("students")) || [];
+
+// ADD
+function addStudent(){
+    let name = document.getElementById("nm").value.trim();
+    let score = document.getElementById("sc").value.trim();
+    let scoreValue = Number(score);
+
+    if(name === ""){
+        alert("សូមបញ្ចូលឈ្មោះ!");
+        return;
+    }
+
+    if(score === "" || isNaN(scoreValue)){
+        alert("សូមបញ្ចូលពិន្ទុត្រឹមត្រូវ!");
+        return;
+    }
+
+    if(scoreValue < 0 || scoreValue > 100){
+        alert("0-100 only!");
+        return;
+    }
+
+    let grade = "";
+    if (scoreValue >= 90) grade = "A";
+    else if (scoreValue >= 80) grade = "B";
+    else if (scoreValue >= 70) grade = "C";
+    else if (scoreValue >= 60) grade = "D";
+    else if (scoreValue >= 50) grade = "E";
+    else grade = "F";
+
+    students.push({name, score: scoreValue, grade});
+    save();
+    showTable();
+
+    document.getElementById("nm").value = "";
+    document.getElementById("sc").value = "";
+}
+
+// SHOW
+function showTable(){
+    let tbody = document.getElementById("tbody");
+    tbody.innerHTML = "";
+
+    students.forEach((stu, i)=>{
+        tbody.innerHTML += `
+        <tr>
+            <td>${i+1}</td>
+            <td>${stu.name}</td>
+            <td>${stu.score}</td>
+            <td>${stu.grade}</td>
+            <td><button onclick="deleteRow(${i})">Delete</button></td>
+        </tr>`;
+    });
+}
+
+// DELETE ONE
+function deleteRow(i){
+    if(confirm("Delete?")){
+        students.splice(i,1);
+        save();
+        showTable();
+    }
+}
+
+// DELETE ALL
+function deleteAll(){
+    if(confirm("Delete all?")){
+        students = [];
+        save();
+        showTable();
+    }
+}
+
+// SAVE
+function save(){
+    localStorage.setItem("students", JSON.stringify(students));
+}
+
+// PRINT
+function printPage(){
+    window.print();
+}
+
+// AUTO LOAD
+window.onload = function(){
+    if(localStorage.getItem("login") === "true"){
+        showSystem();
+    }
+    showTable();
+}
+</script>
+
+</body>
+</html>
